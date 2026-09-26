@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS pokemon;
+
+CREATE TABLE pokemon (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    pokedex_number INTEGER NOT NULL,
+    types TEXT NOT NULL
+);
