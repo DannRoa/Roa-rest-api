@@ -1,5 +1,6 @@
 import sqlite3
 import json
+import os
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
@@ -10,6 +11,15 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def init_db_if_missing():
+    if not os.path.exists(DATABASE):
+        conn = get_db_connection()
+        with open('schema.sql') as f:
+            conn.executescript(f.read())
+        conn.close()
+
+init_db_if_missing()
+
 def format_pokemon(row):
     return {
         "id": row["id"],
@@ -18,7 +28,6 @@ def format_pokemon(row):
         "types": json.loads(row["types"])
     }
 
-# GET /api/pokemon - Fetch all Pokemon
 @app.route('/api/pokemon', methods=['GET'])
 def get_all_pokemon():
     conn = get_db_connection()
@@ -27,7 +36,6 @@ def get_all_pokemon():
     conn.close()
     return jsonify([format_pokemon(row) for row in rows]), 200
 
-# GET /api/pokemon/<id> - Fetch single Pokemon
 @app.route('/api/pokemon/<int:item_id>', methods=['GET'])
 def get_single_pokemon(item_id):
     conn = get_db_connection()
@@ -40,7 +48,6 @@ def get_single_pokemon(item_id):
 
     return jsonify(format_pokemon(row)), 200
 
-# POST /api/pokemon - Create Pokemon
 @app.route('/api/pokemon', methods=['POST'])
 def create_pokemon():
     data = request.get_json()
@@ -66,7 +73,6 @@ def create_pokemon():
 
     return jsonify(format_pokemon(created_row)), 201
 
-# PUT /api/pokemon/<id> - Update Pokemon
 @app.route('/api/pokemon/<int:item_id>', methods=['PUT'])
 def update_pokemon(item_id):
     data = request.get_json()
@@ -99,7 +105,6 @@ def update_pokemon(item_id):
 
     return jsonify(format_pokemon(updated_row)), 200
 
-# DELETE /api/pokemon/<id> - Delete Pokemon
 @app.route('/api/pokemon/<int:item_id>', methods=['DELETE'])
 def delete_pokemon(item_id):
     conn = get_db_connection()
@@ -115,16 +120,6 @@ def delete_pokemon(item_id):
     conn.close()
 
     return jsonify({"message": "Pokemon successfully deleted", "deletedItem": format_pokemon(row)}), 200
-
-    def init_db_if_missing():
-    import os
-    if not os.path.exists(DATABASE):
-        conn = get_db_connection()
-        with open('schema.sql') as f:
-            conn.executescript(f.read())
-        conn.close()
-
-init_db_if_missing()
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
